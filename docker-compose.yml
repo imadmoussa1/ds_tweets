@@ -1,0 +1,144 @@
+version: '3.3'
+
+services:
+  # add nginx service
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - flask-template
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - db
+    volumes:
+      - ./data/nginx:/etc/nginx/conf.d
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+
+  # Cerbot service to shh connection
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+
+  flask-template:
+    # this is used for development only, use the tagged registry image instead
+    image: imadmoussa1/flask-api-uwsgi
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres-data-store
+      - main-data-store
+    secrets:
+      - postgres_db_uri
+      - main_data_store_db_uri
+    environment:
+      # flush python stdout
+      - AUTHLIB_INSECURE_TRANSPORT=true
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - ./configs/global.env
+    networks:
+      - db
+    volumes:
+      - ./blog_api:/var/app
+
+  main-data-store:
+    image: mongo
+    hostname: main-data-store
+    ports:
+      - "27017:27017"
+    secrets:
+      - main_data_store_admin_username
+      - main_data_store_admin_password
+    environment:
+      MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/main_data_store_admin_username
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/main_data_store_admin_password
+    networks:
+      - db
+    volumes:
+      - main-data-store-volume:/data/db
+
+  postgres-data-store:
+    image: postgres:11.0
+    restart: always
+    ports:
+      - "5432:5432"
+    secrets:
+      - postgres_admin_username
+      - postgres_admin_password
+      - postgres_db_name
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/postgres_admin_username
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_admin_password
+      POSTGRES_DB_FILE: /run/secrets/postgres_db_name
+    networks:
+      - db
+    volumes:
+      - postgres-data-store:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - "8082:80"
+    depends_on:
+      - postgres-data-store
+    environment:
+      PGADMIN_DEFAULT_EMAIL: test@test.com
+      PGADMIN_DEFAULT_PASSWORD: pgadminpassword
+    networks:
+      - db
+    volumes:
+      - pgadmin-data-store:/var/lib/pgadmin
+
+  charts:
+    image: quay.io/mongodb/charts:v0.10.0
+    hostname: charts
+    ports:
+      - 8083:80
+    volumes:
+      - keys:/mongodb-charts/volumes/keys
+      - logs:/mongodb-charts/volumes/logs
+      - db-certs:/mongodb-charts/volumes/db-certs
+      - web-certs:/mongodb-charts/volumes/web-certs
+    environment:
+      CHARTS_SUPPORT_WIDGET_AND_METRICS: "on"
+    networks:
+      - db
+    secrets:
+      - charts-mongodb-uri
+
+networks:
+  db:
+    # this is used for development only
+    driver: bridge
+
+secrets:
+  main_data_store_admin_username:
+    file: ./secrets/main_data_store_admin_username.txt
+  main_data_store_admin_password:
+    file: ./secrets/main_data_store_admin_password.txt
+  main_data_store_db_uri:
+    file: ./secrets/main_data_store_db_uri.txt
+  postgres_admin_username:
+    file: ./secrets/postgres_admin_username.txt
+  postgres_admin_password:
+    file: ./secrets/postgres_admin_password.txt
+  postgres_db_name:
+    file: ./secrets/postgres_db_name.txt
+  postgres_db_uri:
+    file: ./secrets/postgres_db_uri.txt
+  charts-mongodb-uri:
+    file: ./secrets/charts_mongodb_uri.txt
+
+volumes:
+  main-data-store-volume:
+  postgres-data-store:
+  pgadmin-data-store:
+  keys:
+  logs:
+  db-certs:
+  web-certs:
