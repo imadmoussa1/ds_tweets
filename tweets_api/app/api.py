@@ -75,7 +75,7 @@ def auth_required(f):
 
 def create_app():
     from .models.user import User
-    from .models.blog import Blog
+    from .models.trend import Trend
     from .models.revoked_token import RevokedToken
 
     security = ["basicAuth", "apiKey"]
@@ -123,16 +123,22 @@ def create_app():
     # alembic_cfg = alembic.config.Config("alembic.ini")
     # command.upgrade(alembic_cfg, "head")
 
-    from .routes.blog_routes import BlogApi
-    api.add_resource(BlogApi, '/api/blog/<blog_id>')
-    api.add_resource(BlogApi, '/api/blog')
+    from .routes.trend_routes import TrendApi
+    api.add_resource(TrendApi, '/api/trend/<trend_id>')
+    api.add_resource(TrendApi, '/api/trend')
 
-    from .routes.blog_list_routes import BlogListApi
-    api.add_resource(BlogListApi, '/api/blogs')
+    from .routes.trend_list_routes import TrendListApi
+    api.add_resource(TrendListApi, '/api/trends')
 
-    from .routes.blog_draft_routes import BlogDraftApi
-    api.add_resource(BlogDraftApi, '/api/drafts/<title>')
-    api.add_resource(BlogDraftApi, '/api/drafts')
+    from .routes.tweet_routes import TweetApi
+    api.add_resource(TweetApi, '/api/tweet/<title>')
+    api.add_resource(TweetApi, '/api/tweet')
+
+    from .routes.tweet_routes import SearchTweetApi
+    api.add_resource(SearchTweetApi, '/api/search/<title>')
+
+    from .routes.tweet_routes import StreamTweetApi
+    api.add_resource(StreamTweetApi, '/api/stream/<title>')
 
     from .routes.user_routes import UserLogin
     api.add_resource(UserLogin, '/api/login')

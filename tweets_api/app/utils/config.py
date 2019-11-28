@@ -3,8 +3,6 @@ import os
 
 # Configuration class to load environments variables
 class Config(object):
-    _filter_service_name = None
-    _filter_service_grpc_port = None
     _sqlalchemy_database_uri = None
     _debug = None
     _testing = None
@@ -13,8 +11,12 @@ class Config(object):
     _bcrypt_log_rounds = None
     _secret_key = None
     _jwt_secret_key = None
-    _blog_database_name = None
-    _blog_drafts_collection_name = None
+    _twitter_consumer_key = None
+    _twitter_consumer_secret = None
+    _twitter_access_token = None
+    _twitter_access_token_secret = None
+    _stream_raw_database_name = None
+    _analyzed_database_name = None
 
     @staticmethod
     def sqlalchemy_database_uri():
@@ -71,17 +73,52 @@ class Config(object):
         return Config._database_service_port
 
     @staticmethod
-    def blog_database_name():
-        if Config._blog_database_name is None:
-            Config._blog_database_name = os.getenv('BLOG_DATABASE_NAME', 'blog_data')
-        return Config._blog_database_name
+    def log_level():
+        if Config._log_level is None:
+            Config._log_level = os.getenv('LOG_LEVEL', 'INFO')
+            return Config._log_level
 
     @staticmethod
-    def blog_drafts_collection_name():
-        if Config._blog_drafts_collection_name is None:
-            Config._blog_drafts_collection_name = os.getenv('BLOG_DRAFTS_COLLECTION_NAME', 'blog_drafts')
-        return Config._blog_drafts_collection_name
+    def stream_raw_database_name():
+        if Config._stream_raw_database_name is None:
+            Config._stream_raw_database_name = os.getenv('STREAM_RAW_DATABASE_NAME', 'stream_raw_data')
+            return Config._stream_raw_database_name
 
+    @staticmethod
+    def analyzed_database_name():
+        if Config._analyzed_database_name is None:
+            Config._analyzed_database_name = os.getenv('ANALYZED_DATABASE_NAME', 'analyzed_data')
+            return Config._analyzed_database_name
+
+    @staticmethod
+    def tweets_collection_name():
+        if Config._trades_collection_name is None:
+            Config._trades_collection_name = os.getenv('TWEETS_COLLECTION_NAME', 'tweets')
+            return Config._trades_collection_name
+
+    @staticmethod
+    def twitter_consumer_key():
+        if Config._twitter_consumer_key is None:
+            Config._twitter_consumer_key = os.getenv('TWITTER_CONSUMER_KEY', '')
+            return Config._twitter_consumer_key
+
+    @staticmethod
+    def twitter_consumer_secret():
+        if Config._twitter_consumer_secret is None:
+            Config._twitter_consumer_secret = os.getenv('TWITTER_CONSUMER_SECRET', '')
+            return Config._twitter_consumer_secret
+
+    @staticmethod
+    def twitter_access_token():
+        if Config._twitter_access_token is None:
+            Config._twitter_access_token = os.getenv('TWITTER_ACCESS_TOKEN', '')
+            return Config._twitter_access_token
+
+    @staticmethod
+    def twitter_access_token_secret():
+        if Config._twitter_access_token_secret is None:
+            Config._twitter_access_token_secret = os.getenv('TWITTER_ACCESS_TOKEN_SECRET', '')
+            return Config._twitter_access_token_secret
 
 class ProductionConfig(Config):
     DEBUG = False
