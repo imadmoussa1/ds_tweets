@@ -1,7 +1,6 @@
-from app.api import db, log, parser, Resource, jsonify, request, DataStoreClient
+from app.api import db, log, parser, Resource, jsonify, request, DataStoreClient, tweet_search, tweet_stream
 from flask_jwt_extended import (JWTManager, create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 
-from ..models.tweet import Tweet
 from ..models.user import User
 from ..schema.tweet_schema import tweet_schema
 
@@ -32,17 +31,27 @@ class TweetApi(Resource):
 
 
 class SearchTweetApi(Resource):
-    def get(self, title):
-        tweet_api = TweetApi()
-        tweet_api.get_tweets()
-        blog = DataStoreClient.tweets_collection().find_one(
-            {"title": title}, {'_id': False})
-        result = tweet_schema.dump(blog)
-        return jsonify(result.data)
+    def get(self):
+        query = request.args.get('query')
+        search = tweet_search()
+        search.get_tweets(query)
+        return jsonify({"message": "done"})
 
 
 class StreamTweetApi(Resource):
     def get(self, title):
-        blog = DataStoreClient.tweets_collection().find_one({"title": title}, {'_id': False})
-        result = tweet_schema.dump(blog)
-        return jsonify(result.data)
+        return jsonify({"message": "start stream"})
+
+# @celery.task()
+# def stream_tweets(query):
+#     tracks_filter = ['bitcoin']
+#     lang = ['en']
+
+#     auth = OAuthHandler(Config.twitter_consumer_key(), Config.twitter_consumer_secret())
+#     auth.set_access_token(Config.twitter_access_token(),
+#                             Config.twitter_access_token_secret())
+
+#     listener = TweetStreamListener()
+#     stream = Stream(auth, listener)
+#     stream.filter(track=tracks_filter, languages=lang, filter_level="meduim", async="True")
+

@@ -16,6 +16,9 @@ from passlib.hash import pbkdf2_sha256
 from app.utils.config import Config
 from app.utils.logger import Logger
 from app.utils.data_store_client import DataStoreClient
+from app.utils.tweet_api import TweetApi
+from app.utils.tweet_stream_listener import TweetStreamListener
+from .celery_server import make_celery
 
 sha256 = pbkdf2_sha256
 request = request
@@ -26,6 +29,8 @@ datetime = datetime
 Resource = Resource
 parser = reqparse.RequestParser()
 jsonify = jsonify
+tweet_search = TweetApi
+tweet_stream = TweetStreamListener
 
 jwt = JWTManager()
 db = SQLAlchemy()
@@ -103,8 +108,12 @@ def create_app():
         SQLALCHEMY_TRACK_MODIFICATIONS=True,
         SECRET_KEY=config_env.secret_key(),
         DEBUG=config_env.debug(),
-        PROPAGATE_EXCEPTIONS=True
+        PROPAGATE_EXCEPTIONS=True,
+        CELERY_BROKER_URL=config_env.redis_uri(),
+        CELERY_RESULT_BACKEND=config_env.redis_uri()
     )
+    celery = make_celery(app)
+
     cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
     # cors = CORS(app, supports_credentials=True)
 
@@ -117,7 +126,7 @@ def create_app():
     db.create_all(app=app)
     db.session.commit()
     # Create index in mongodb collection
-    DataStoreClient.create_index()
+    # DataStoreClient.create_index()
     # import alembic.config
     # from alembic import command
     # alembic_cfg = alembic.config.Config("alembic.ini")
@@ -135,10 +144,10 @@ def create_app():
     api.add_resource(TweetApi, '/api/tweet')
 
     from .routes.tweet_routes import SearchTweetApi
-    api.add_resource(SearchTweetApi, '/api/search/<title>')
+    api.add_resource(SearchTweetApi, '/api/search')
 
     from .routes.tweet_routes import StreamTweetApi
-    api.add_resource(StreamTweetApi, '/api/stream/<title>')
+    api.add_resource(StreamTweetApi, '/api/stream')
 
     from .routes.user_routes import UserLogin
     api.add_resource(UserLogin, '/api/login')

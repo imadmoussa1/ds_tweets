@@ -6,7 +6,7 @@ services:
     image: nginx:alpine
     container_name: nginx
     depends_on:
-      - flask-template
+      - ds_tweets
     ports:
       - "80:80"
       - "443:443"
@@ -50,17 +50,18 @@ services:
       - PYTHONUNBUFFERED=1
     env_file:
       - ./configs/global.env
+      - ./configs/twitter-sentiment-analysis.env
     networks:
       - db
     volumes:
-      - ./blog_api:/var/app
+      - ./tweets_api:/var/app
 
   mongo:
     image: mongo
     hostname: mongo
     container_name: mongo
-    # ports:
-    #   - 27017:27017
+    ports:
+      - 27017:27017
     secrets:
       - mongo_admin_username
       - mongo_admin_password

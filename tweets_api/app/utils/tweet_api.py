@@ -24,7 +24,10 @@ class TweetApi:
         maxTweets = 10000000  # Some arbitrary large number
         tweetsPerQry = 100  # this is the max the API permits
 
-        for tweet in tweepy.Cursor(self.api_connected().search, tweet_mode="extended", q=searchQuery, lang="en", locale='en').items(100000):
-            print(tweet.text)
+        for tweet in tweepy.Cursor(self.api_connected().search, tweet_mode="extended", q=searchQuery, lang="en", locale="en").items(10):
+            print(tweet)
+            if tweet:
+                DataStoreClient.tweets_collection().update_one({'tweet_id': tweet._json['id_str']}, {"$set": tweet._json}, upsert=True)
+
         log.info("Downloading max {0} tweets".format(maxTweets))
 

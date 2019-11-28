@@ -13,9 +13,8 @@ class DataStoreClient:
     @staticmethod
     def mongo_client():
         if DataStoreClient._mongo_client is None:
-            mongo_uri = open("/run/secrets/main_data_store_db_uri", "r").readline()
+            mongo_uri = open("/run/secrets/mongo_db_uri", "r").readline()
             DataStoreClient._mongo_client = MongoClient(mongo_uri)
-
         return DataStoreClient._mongo_client
 
     @staticmethod
@@ -34,15 +33,16 @@ class DataStoreClient:
 
     @staticmethod
     def stream_raw_database():
-        if DataStoreClient._stream_raw_database is None:
+        if DataStoreClient._stream_raw_database is None and DataStoreClient.is_database_connected():
+            print(DataStoreClient.mongo_client())
             DataStoreClient._stream_raw_database = DataStoreClient.mongo_client()[Config.stream_raw_database_name()]
-            return DataStoreClient._stream_raw_database
+        return DataStoreClient._stream_raw_database
 
     @staticmethod
     def analyzed_database():
         if DataStoreClient._analyzed_database is None:
             DataStoreClient._analyzed_database = DataStoreClient.mongo_client()[Config.analyzed_database_name()]
-            return DataStoreClient._analyzed_database
+        return DataStoreClient._analyzed_database
 
     @staticmethod
     def tweets_collection():

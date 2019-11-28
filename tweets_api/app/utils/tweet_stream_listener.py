@@ -5,7 +5,7 @@ from nltk.tokenize import WordPunctTokenizer
 from bs4 import BeautifulSoup
 from textblob import TextBlob
 from tweepy.streaming import StreamListener
-from watson_developer_cloud import ToneAnalyzerV3
+# from watson_developer_cloud import ToneAnalyzerV3
 from .data_store_client import DataStoreClient
 from .logger import Logger
 
@@ -31,7 +31,7 @@ class TweetStreamListener(StreamListener):
                 user_mentions = tweet_dict_data['entities']['user_mentions']
 
             # filtered_tweet = ' '.join(re.sub("(@[A-Za-z0-9])|([^0-9A-Za-z \t])|(\w:\/\/\S+)", " ", tweet).split())
-            # filtered_tweet = TweetStreamListener.tweet_cleaner(tweet)
+            filtered_tweet = TweetStreamListener.tweet_cleaner(tweet)
             # tone_analyzer = ToneAnalyzerV3(version='2017-09-21', username='2024c3cc-6366-4b8d-9a11-f0fb0b7a6dcc',password='gQF2NOGfs2q4', url='https://gateway.watsonplatform.net/tone-analyzer/api')
 
             # tone_analysis = tone_analyzer.tone({'text': filtered_tweet}, 'application/json').get_result()

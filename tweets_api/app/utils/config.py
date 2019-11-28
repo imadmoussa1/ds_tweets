@@ -17,12 +17,20 @@ class Config(object):
     _twitter_access_token_secret = None
     _stream_raw_database_name = None
     _analyzed_database_name = None
+    _redis_uri = None
+    _tweets_collection_name = None
 
     @staticmethod
     def sqlalchemy_database_uri():
         if Config._sqlalchemy_database_uri is None:
             Config._sqlalchemy_database_uri = open("/run/secrets/postgres_db_uri", "r").readline()
         return Config._sqlalchemy_database_uri
+
+    @staticmethod
+    def redis_uri():
+        if Config._redis_uri is None:
+            Config._redis_uri = os.getenv('REDIS_URI', 'redis://redis:6379')
+        return Config._redis_uri
 
     @staticmethod
     def log_level():
@@ -63,62 +71,62 @@ class Config(object):
     @staticmethod
     def database_service_name():
         if Config._database_service_name is None:
-            Config._database_service_name = os.getenv('MAIN_DATASTORE_SERVICE_NAME', 'main-data-store')
+            Config._database_service_name = os.getenv('MONGO_NAME', 'mongo')
         return Config._database_service_name
 
     @staticmethod
     def database_service_port():
         if Config._database_service_port is None:
-            Config._database_service_port = int(os.getenv('MAIN_DATASTORE_SERVICE_MONGO_PORT', 27017))
+            Config._database_service_port = int(os.getenv('MONGO_PORT', 27017))
         return Config._database_service_port
 
     @staticmethod
     def log_level():
         if Config._log_level is None:
             Config._log_level = os.getenv('LOG_LEVEL', 'INFO')
-            return Config._log_level
+        return Config._log_level
 
     @staticmethod
     def stream_raw_database_name():
         if Config._stream_raw_database_name is None:
             Config._stream_raw_database_name = os.getenv('STREAM_RAW_DATABASE_NAME', 'stream_raw_data')
-            return Config._stream_raw_database_name
+        return Config._stream_raw_database_name
 
     @staticmethod
     def analyzed_database_name():
         if Config._analyzed_database_name is None:
             Config._analyzed_database_name = os.getenv('ANALYZED_DATABASE_NAME', 'analyzed_data')
-            return Config._analyzed_database_name
+        return Config._analyzed_database_name
 
     @staticmethod
     def tweets_collection_name():
-        if Config._trades_collection_name is None:
-            Config._trades_collection_name = os.getenv('TWEETS_COLLECTION_NAME', 'tweets')
-            return Config._trades_collection_name
+        if Config._tweets_collection_name is None:
+            Config._tweets_collection_name = os.getenv('TWEETS_COLLECTION_NAME', 'tweets')
+        return Config._tweets_collection_name
 
     @staticmethod
     def twitter_consumer_key():
         if Config._twitter_consumer_key is None:
             Config._twitter_consumer_key = os.getenv('TWITTER_CONSUMER_KEY', '')
-            return Config._twitter_consumer_key
+        return Config._twitter_consumer_key
 
     @staticmethod
     def twitter_consumer_secret():
         if Config._twitter_consumer_secret is None:
             Config._twitter_consumer_secret = os.getenv('TWITTER_CONSUMER_SECRET', '')
-            return Config._twitter_consumer_secret
+        return Config._twitter_consumer_secret
 
     @staticmethod
     def twitter_access_token():
         if Config._twitter_access_token is None:
             Config._twitter_access_token = os.getenv('TWITTER_ACCESS_TOKEN', '')
-            return Config._twitter_access_token
+        return Config._twitter_access_token
 
     @staticmethod
     def twitter_access_token_secret():
         if Config._twitter_access_token_secret is None:
             Config._twitter_access_token_secret = os.getenv('TWITTER_ACCESS_TOKEN_SECRET', '')
-            return Config._twitter_access_token_secret
+        return Config._twitter_access_token_secret
 
 class ProductionConfig(Config):
     DEBUG = False

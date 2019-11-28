@@ -7,4 +7,4 @@ class TrendSchema(ma.Schema):
 
 
 trend_schema = TrendSchema()
-blogs_schema = TrendSchema(many=True)
+trends_schema = TrendSchema(many=True)
