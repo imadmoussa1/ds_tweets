@@ -102,7 +102,7 @@ class Config(object):
     @staticmethod
     def tweets_collection_name():
         if Config._tweets_collection_name is None:
-            Config._tweets_collection_name = os.getenv('TWEETS_COLLECTION_NAME', 'tweets_2')
+            Config._tweets_collection_name = os.getenv('TWEETS_COLLECTION_NAME', 'tweets_data')
         return Config._tweets_collection_name
 
     @staticmethod

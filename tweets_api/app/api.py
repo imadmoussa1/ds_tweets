@@ -152,6 +152,9 @@ api.add_resource(StreamTweetApi, '/api/stream')
 from .routes.tweet_routes import PremiumSearchTweetApi
 api.add_resource(PremiumSearchTweetApi, '/api/premuim')
 
+from .routes.tweet_routes import ExportTweetsApi
+api.add_resource(ExportTweetsApi, '/api/tweet/export')
+
 from .routes.user_routes import UserLogin
 api.add_resource(UserLogin, '/api/login')
 

@@ -27,14 +27,14 @@ class DataStoreClient:
 
     @staticmethod
     def create_index():
-        index_name = 'title_index'
-        if index_name not in DataStoreClient.blog_drafts_collection().index_information():
-            return DataStoreClient.blog_drafts_collection().create_index([('title', pymongo.TEXT)], name=index_name, default_language='english')
+        index_name = 'id_index'
+        if index_name not in DataStoreClient.tweets_collection().index_information():
+            return DataStoreClient.tweets_collection().create_index([('id_str', pymongo.TEXT)], name=index_name, unique=True)
+
 
     @staticmethod
     def stream_raw_database():
         if DataStoreClient._stream_raw_database is None and DataStoreClient.is_database_connected():
-            print(DataStoreClient.mongo_client())
             DataStoreClient._stream_raw_database = DataStoreClient.mongo_client()[Config.stream_raw_database_name()]
         return DataStoreClient._stream_raw_database
 
@@ -45,8 +45,12 @@ class DataStoreClient:
         return DataStoreClient._analyzed_database
 
     @staticmethod
-    def tweets_collection():
-        return DataStoreClient.stream_raw_database()[Config.tweets_collection_name()]
+    def tweets_collection(collection_name=None):
+        if collection_name is None:
+            return DataStoreClient.stream_raw_database()[Config.tweets_collection_name()]
+        else:
+            return DataStoreClient.stream_raw_database()[collection_name]
+
 
     @staticmethod
     def anlyzed_tweets_collection():
