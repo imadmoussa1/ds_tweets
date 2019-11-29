@@ -1,5 +1,5 @@
-from app.api import create_app
+from app.api import app
 
-app = create_app()
+main_app = app
 if __name__ == '__main__':
-  app.run()
+  main_app.run()

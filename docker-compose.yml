@@ -27,8 +27,8 @@ services:
   redis:
     image: redis
     container_name: redis
-    ports:
-      - 6379:6379
+    # ports:
+    #   - 6379:6379
     networks:
       - celery
 
@@ -53,6 +53,7 @@ services:
       - ./configs/twitter-sentiment-analysis.env
     networks:
       - db
+      - celery
     volumes:
       - ./tweets_api:/var/app
 

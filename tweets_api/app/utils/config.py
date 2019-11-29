@@ -19,6 +19,7 @@ class Config(object):
     _analyzed_database_name = None
     _redis_uri = None
     _tweets_collection_name = None
+    _twitter_bearer_token = None
 
     @staticmethod
     def sqlalchemy_database_uri():
@@ -89,7 +90,7 @@ class Config(object):
     @staticmethod
     def stream_raw_database_name():
         if Config._stream_raw_database_name is None:
-            Config._stream_raw_database_name = os.getenv('STREAM_RAW_DATABASE_NAME', 'stream_raw_data')
+            Config._stream_raw_database_name = os.getenv('STREAM_RAW_DATABASE_NAME', 'raw_data')
         return Config._stream_raw_database_name
 
     @staticmethod
@@ -101,7 +102,7 @@ class Config(object):
     @staticmethod
     def tweets_collection_name():
         if Config._tweets_collection_name is None:
-            Config._tweets_collection_name = os.getenv('TWEETS_COLLECTION_NAME', 'tweets')
+            Config._tweets_collection_name = os.getenv('TWEETS_COLLECTION_NAME', 'tweets_2')
         return Config._tweets_collection_name
 
     @staticmethod
@@ -127,6 +128,12 @@ class Config(object):
         if Config._twitter_access_token_secret is None:
             Config._twitter_access_token_secret = os.getenv('TWITTER_ACCESS_TOKEN_SECRET', '')
         return Config._twitter_access_token_secret
+
+    @staticmethod
+    def twitter_bearer_token():
+        if Config._twitter_bearer_token is None:
+            Config._twitter_bearer_token = os.getenv('TWITTER_BEARER_TOKEN', '')
+        return Config._twitter_bearer_token
 
 class ProductionConfig(Config):
     DEBUG = False

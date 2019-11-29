@@ -1,4 +1,4 @@
-from app.api import db, log, parser, Resource, jsonify, request, DataStoreClient, tweet_search, tweet_stream
+from app.api import db, log, parser, Resource, jsonify, request, DataStoreClient, tweet_search, tweet_stream, celery
 from flask_jwt_extended import (JWTManager, create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
 
 from ..models.user import User
@@ -33,14 +33,32 @@ class TweetApi(Resource):
 class SearchTweetApi(Resource):
     def get(self):
         query = request.args.get('query')
-        search = tweet_search()
-        search.get_tweets(query)
-        return jsonify({"message": "done"})
+        task = searching.apply_async(args=[query])
+        return jsonify({"message": "Start searching"})
 
+class PremiumSearchTweetApi(Resource):
+    def get(self):
+        query = request.args.get('query')
+        from_date = request.args.get('from_date')
+        to_date = request.args.get('to_date')
+        task = premuim_search.apply_async(args=[query, from_date, to_date])
+        return jsonify({"message": "Start premuim searching"})
 
 class StreamTweetApi(Resource):
     def get(self, title):
         return jsonify({"message": "start stream"})
+
+@celery.task(name="tweets_search_task")
+def searching(query):
+    log.info("start searching for %s"%(query))
+    search = tweet_search()
+    search.get_tweets(query)
+    log.info("done searching")
+
+@celery.task(name="premuim_tweets_search_task")
+def premuim_search(query, from_date, to_date):
+    search = tweet_search()
+    search.get_premuin_tweets(query, from_date, to_date)
 
 # @celery.task()
 # def stream_tweets(query):

@@ -78,93 +78,95 @@ def auth_required(f):
     return decorated
 
 
-def create_app():
-    from .models.user import User
-    from .models.trend import Trend
-    from .models.revoked_token import RevokedToken
 
-    security = ["basicAuth", "apiKey"]
-    authorizations = {
-        "basicAuth": {
-            "type": "basic",
-            "in": "header",
-            "name": "Authorization"
-        },
-        "apiKey": {
-            "type": "apiKey",
-            "in": "header",
-            "name": "Authorization"
-        },
-    }
+from .models.user import User
+from .models.trend import Trend
+from .models.revoked_token import RevokedToken
 
-    app = Flask(__name__, instance_relative_config=True)
-    app.config.update(
-        BASEDIR=os.path.abspath(os.path.dirname(__file__)),
-        JWT_TOKEN_LOCATION="headers",
-        JWT_SECRET_KEY=config_env.jwt_secret_key(),
-        JWT_BLACKLIST_ENABLED=True,
-        JWT_BLACKLIST_TOKEN_CHECKS=["access", "refresh"],
-        SQLALCHEMY_DATABASE_URI=config_env.sqlalchemy_database_uri(),
-        SQLALCHEMY_TRACK_MODIFICATIONS=True,
-        SECRET_KEY=config_env.secret_key(),
-        DEBUG=config_env.debug(),
-        PROPAGATE_EXCEPTIONS=True,
-        CELERY_BROKER_URL=config_env.redis_uri(),
-        CELERY_RESULT_BACKEND=config_env.redis_uri()
-    )
-    celery = make_celery(app)
+security = ["basicAuth", "apiKey"]
+authorizations = {
+    "basicAuth": {
+        "type": "basic",
+        "in": "header",
+        "name": "Authorization"
+    },
+    "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization"
+    },
+}
 
-    cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
-    # cors = CORS(app, supports_credentials=True)
+app = Flask(__name__, instance_relative_config=True)
+app.config.update(
+    BASEDIR=os.path.abspath(os.path.dirname(__file__)),
+    JWT_TOKEN_LOCATION="headers",
+    JWT_SECRET_KEY=config_env.jwt_secret_key(),
+    JWT_BLACKLIST_ENABLED=True,
+    JWT_BLACKLIST_TOKEN_CHECKS=["access", "refresh"],
+    SQLALCHEMY_DATABASE_URI=config_env.sqlalchemy_database_uri(),
+    SQLALCHEMY_TRACK_MODIFICATIONS=True,
+    SECRET_KEY=config_env.secret_key(),
+    DEBUG=config_env.debug(),
+    PROPAGATE_EXCEPTIONS=True,
+    CELERY_BROKER_URL=config_env.redis_uri(),
+    CELERY_RESULT_BACKEND=config_env.redis_uri()
+)
+celery = make_celery(app)
 
-    jwt.init_app(app)
-    db.init_app(app)
-    ma.init_app(app)
-    bcrypt.init_app(app)
-    app.app_context().push()
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+# cors = CORS(app, supports_credentials=True)
 
-    db.create_all(app=app)
-    db.session.commit()
-    # Create index in mongodb collection
-    # DataStoreClient.create_index()
-    # import alembic.config
-    # from alembic import command
-    # alembic_cfg = alembic.config.Config("alembic.ini")
-    # command.upgrade(alembic_cfg, "head")
+jwt.init_app(app)
+db.init_app(app)
+ma.init_app(app)
+bcrypt.init_app(app)
+app.app_context().push()
 
-    from .routes.trend_routes import TrendApi
-    api.add_resource(TrendApi, '/api/trend/<trend_id>')
-    api.add_resource(TrendApi, '/api/trend')
+db.create_all(app=app)
+db.session.commit()
+# Create index in mongodb collection
+# DataStoreClient.create_index()
+# import alembic.config
+# from alembic import command
+# alembic_cfg = alembic.config.Config("alembic.ini")
+# command.upgrade(alembic_cfg, "head")
 
-    from .routes.trend_list_routes import TrendListApi
-    api.add_resource(TrendListApi, '/api/trends')
+from .routes.trend_routes import TrendApi
+api.add_resource(TrendApi, '/api/trend/<trend_id>')
+api.add_resource(TrendApi, '/api/trend')
 
-    from .routes.tweet_routes import TweetApi
-    api.add_resource(TweetApi, '/api/tweet/<title>')
-    api.add_resource(TweetApi, '/api/tweet')
+from .routes.trend_list_routes import TrendListApi
+api.add_resource(TrendListApi, '/api/trends')
 
-    from .routes.tweet_routes import SearchTweetApi
-    api.add_resource(SearchTweetApi, '/api/search')
+from .routes.tweet_routes import TweetApi
+api.add_resource(TweetApi, '/api/tweet/<title>')
+api.add_resource(TweetApi, '/api/tweet')
 
-    from .routes.tweet_routes import StreamTweetApi
-    api.add_resource(StreamTweetApi, '/api/stream')
+from .routes.tweet_routes import SearchTweetApi
+api.add_resource(SearchTweetApi, '/api/search')
 
-    from .routes.user_routes import UserLogin
-    api.add_resource(UserLogin, '/api/login')
+from .routes.tweet_routes import StreamTweetApi
+api.add_resource(StreamTweetApi, '/api/stream')
 
-    from .routes.user_routes import UserRegister
-    api.add_resource(UserRegister, '/api/register')
+from .routes.tweet_routes import PremiumSearchTweetApi
+api.add_resource(PremiumSearchTweetApi, '/api/premuim')
 
-    from .routes.user_routes import UserTokenRefresh
-    api.add_resource(UserTokenRefresh, '/api/token_refresh')
+from .routes.user_routes import UserLogin
+api.add_resource(UserLogin, '/api/login')
 
-    from .routes.user_routes import UserLogoutRefresh
-    api.add_resource(UserLogoutRefresh, '/api/logout_refresh')
+from .routes.user_routes import UserRegister
+api.add_resource(UserRegister, '/api/register')
 
-    from .routes.user_routes import UserLogoutAccess
-    api.add_resource(UserLogoutAccess, '/api/logout_access')
+from .routes.user_routes import UserTokenRefresh
+api.add_resource(UserTokenRefresh, '/api/token_refresh')
 
-    api.init_app(app=app, authorizations=authorizations, security=security, version="0.0.1", description="REST Template")
-    jwt._set_error_handler_callbacks(api)
+from .routes.user_routes import UserLogoutRefresh
+api.add_resource(UserLogoutRefresh, '/api/logout_refresh')
 
-    return app
+from .routes.user_routes import UserLogoutAccess
+api.add_resource(UserLogoutAccess, '/api/logout_access')
+
+api.init_app(app=app, authorizations=authorizations, security=security, version="0.0.1", description="REST Template")
+jwt._set_error_handler_callbacks(api)
+
