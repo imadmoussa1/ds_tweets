@@ -16,7 +16,8 @@ class TweetStreamListener(tweepy.StreamListener):
 
     def on_data(self, data):
         tweet_dict_data = json.loads(data)
-        print(tweet_dict_data)
+        # log.info(tweet_dict_data)
+        DataStoreClient.tweets_collection('tweets').insert_one(tweet_dict_data)
         DataStoreClient.tweets_collection().update_one({'id_str': tweet_dict_data['id_str']}, {"$set": tweet_dict_data}, upsert=True)
 
         # # pass tweet into TextBlob

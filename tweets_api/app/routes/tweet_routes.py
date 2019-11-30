@@ -5,7 +5,7 @@ from flask_jwt_extended import (JWTManager, create_access_token, create_refresh_
 from ..models.user import User
 from ..schema.tweet_schema import tweet_schema
 import csv
-
+import pymongo
 parser.add_argument('title')
 
 
@@ -63,6 +63,10 @@ class ExportTweetsApi(Resource):
         task = export_tweets.apply_async(args=[fields])
         return jsonify({"message": "start exporting"})
 
+class RemoveTweetsDuplicatesApi(Resource):
+    def get(self):
+        remove_tweets_duplicate.apply_async(args=[])
+        return jsonify({"message": "start removing text tweets duplicate"})
 
 @celery.task(name="tweets_search_task")
 def searching(query):
@@ -101,17 +105,23 @@ def stream_tweets(query):
     except Exception as e:
         log.error(e)
 
+@celery.task(name="remove_tweets_duplicate")
+def remove_tweets_duplicate():
+    log.info("start removing tweets text duplicate")
+    for a in DataStoreClient.tweets_collection().find({}, {'_id': 0}):
+        try:
+            if 'text' in a:
+                DataStoreClient.tweets_collection("unique_tweets_data").insert_one(a)
+            else:
+                a['text'] = a['full_text']
+                DataStoreClient.tweets_collection("unique_tweets_data").insert_one(a)
+        except pymongo.errors.DuplicateKeyError:
+            log.info("duplicate text: %s"%a['text'])
+            continue
+    log.info("stop removing tweets text duplicate")
+
 @celery.task(name="export_tweets")
 def export_tweets(fields):
-    # print("start")
-    # for a in DataStoreClient.tweets_collection('tweets').find({}, {'_id': 0}):
-    #     # print(a)
-    #     DataStoreClient.tweets_collection().update_one({'id_str': a['id_str']}, {"$set": a}, upsert=True)
-    # print("start1")
-    # for a in DataStoreClient.tweets_collection('tweets_2').find({}, {'_id': 0}):
-    #     # print(a)
-    #     DataStoreClient.tweets_collection().update_one({'id_str': a['id_str']}, {"$set": a}, upsert=True)
-    # print("end")
     try:
         cursor = DataStoreClient.tweets_collection().find(
             {'$or': [

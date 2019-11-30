@@ -27,10 +27,10 @@ class DataStoreClient:
 
     @staticmethod
     def create_index():
+        # return DataStoreClient.tweets_collection('unique_tweets_data').create_index([('text', pymongo.TEXT)], name='text_index', unique=True)
         index_name = 'id_index'
         if index_name not in DataStoreClient.tweets_collection().index_information():
             return DataStoreClient.tweets_collection().create_index([('id_str', pymongo.TEXT)], name=index_name, unique=True)
-
 
     @staticmethod
     def stream_raw_database():
@@ -50,7 +50,6 @@ class DataStoreClient:
             return DataStoreClient.stream_raw_database()[Config.tweets_collection_name()]
         else:
             return DataStoreClient.stream_raw_database()[collection_name]
-
 
     @staticmethod
     def anlyzed_tweets_collection():
