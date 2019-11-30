@@ -9,6 +9,7 @@ class DataStoreClient:
     _mongo_client = None
     _stream_raw_database = None
     _analyzed_database = None
+    _trends_database = None
 
     @staticmethod
     def mongo_client():
@@ -54,3 +55,13 @@ class DataStoreClient:
     @staticmethod
     def anlyzed_tweets_collection():
         return DataStoreClient.analyzed_database()[Config.tweets_collection_name()]
+
+    @staticmethod
+    def trends_database():
+        if DataStoreClient._trends_database is None and DataStoreClient.is_database_connected():
+            DataStoreClient._trends_database = DataStoreClient.mongo_client()[Config.trends_database_name()]
+        return DataStoreClient._trends_database
+
+    @staticmethod
+    def trends_collection(collection_name):
+        return DataStoreClient.trends_database()[collection_name]

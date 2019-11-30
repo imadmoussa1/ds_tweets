@@ -4,6 +4,7 @@ import os
 import time
 import tweepy
 import requests
+import datetime
 from pymongo import UpdateOne, InsertOne
 from pymongo.errors import BulkWriteError
 from .config import Config
@@ -96,14 +97,14 @@ class TweetApi:
         next_token = None
         endpoint = "https://api.twitter.com/1.1/tweets/search/30day/teweets.json"
         # endpoint = "https://api.twitter.com/1.1/tweets/search/fullarchive/teweets.json"
-        headers = {"Authorization":"Bearer %s"%(Config.twitter_bearer_token()), "Content-Type": "application/json"}  
+        headers = {"Authorization":"Bearer %s"%(Config.twitter_bearer_token()), "Content-Type": "application/json"}
         db_query = []
         while True:
             if next_token is None:
                 data = '{"query": "#%s", "fromDate":"%s", "toDate":"%s"}'%(search_query, from_date, to_date)
             else:
                 data = '{"query": "#%s", "fromDate":"%s", "toDate":"%s", "next":"%s"}'%(search_query, from_date, to_date, next_token)
-            response = requests.post(endpoint,data=data.encode('utf-8'),headers=headers).json()
+            response = requests.post(endpoint, data=data.encode('utf-8'), headers=headers).json()
             if "error" in response:
                 log.error(response['error'])
             if "results" in response:
@@ -121,3 +122,22 @@ class TweetApi:
             log.info("Insert result: %s"%bulk_insert.bulk_api_result)
         except BulkWriteError as bwe:
             log.error(bwe.details)
+
+    def get_trends_request(self, location_woeid):
+        # 23424873
+        log.info("Get trends")
+        endpoint = "https://api.twitter.com/1.1/trends/place.json"
+        headers = {"Authorization":"Bearer %s"%(Config.twitter_bearer_token()), "Content-Type": "application/json"}
+        params = {"id": location_woeid}
+        response = requests.get(endpoint, params=params, headers=headers).json()
+        # log.info(response)
+        if "errors" in response:
+            log.error(response)
+        else:
+            trends = response[0]['trends']
+            location = response[0]['locations'][0]['name']
+            as_of = datetime.datetime.strptime(response[0]['as_of'],"%Y-%m-%dT%H:%M:%SZ")
+            created_at = datetime.datetime.strptime(response[0]['created_at'],"%Y-%m-%dT%H:%M:%SZ")
+            date = {"as_of": as_of, "created_at": created_at}
+            result = [dict(item, **date) for item in trends]
+            DataStoreClient.trends_collection(location).insert_many(result)

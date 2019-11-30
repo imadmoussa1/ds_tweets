@@ -20,6 +20,7 @@ class Config(object):
     _redis_uri = None
     _tweets_collection_name = None
     _twitter_bearer_token = None
+    _trends_database_name = None
 
     @staticmethod
     def sqlalchemy_database_uri():
@@ -98,6 +99,12 @@ class Config(object):
         if Config._analyzed_database_name is None:
             Config._analyzed_database_name = os.getenv('ANALYZED_DATABASE_NAME', 'analyzed_data')
         return Config._analyzed_database_name
+
+    @staticmethod
+    def trends_database_name():
+        if Config._trends_database_name is None:
+            Config._trends_database_name = os.getenv('TRENDS_DATABASE_NAME', 'trends_data')
+        return Config._trends_database_name
 
     @staticmethod
     def tweets_collection_name():
