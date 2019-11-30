@@ -1,3 +1,4 @@
+tweets_api/export/*
 # cerbot keys
 data/certbot/*
 # ignore secrets directory
