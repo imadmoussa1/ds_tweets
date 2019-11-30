@@ -4,7 +4,7 @@ import re
 from nltk.tokenize import WordPunctTokenizer
 from bs4 import BeautifulSoup
 from textblob import TextBlob
-from tweepy.streaming import StreamListener
+import tweepy
 # from watson_developer_cloud import ToneAnalyzerV3
 from .data_store_client import DataStoreClient
 from .logger import Logger
@@ -12,77 +12,77 @@ from .logger import Logger
 log = Logger.log(__name__)
 
 
-class TweetStreamListener(StreamListener):
+class TweetStreamListener(tweepy.StreamListener):
 
     def on_data(self, data):
         tweet_dict_data = json.loads(data)
-        DataStoreClient.tweets_collection().update_one({'tweet_id': tweet_dict_data['tweet_id']}, {"$set": tweet_dict_data}, upsert=True)
+        print(tweet_dict_data)
+        DataStoreClient.tweets_collection().update_one({'id_str': tweet_dict_data['id_str']}, {"$set": tweet_dict_data}, upsert=True)
 
-        # pass tweet into TextBlob
-        if tweet_dict_data['favorited'] or tweet_dict_data['retweeted'] or tweet_dict_data['user']['followers_count'] > 100000 or tweet_dict_data['user']['friends_count'] > 5000:
-            log.debug(tweet_dict_data)
-            if tweet_dict_data['truncated']:
-                tweet = tweet_dict_data["extended_tweet"]['full_text']
-                hashtags = tweet_dict_data['extended_tweet']['entities']['hashtags']
-                user_mentions = tweet_dict_data['extended_tweet']['entities']['user_mentions']
-            else:
-                tweet = tweet_dict_data["text"]
-                hashtags = tweet_dict_data['entities']['hashtags']
-                user_mentions = tweet_dict_data['entities']['user_mentions']
+        # # pass tweet into TextBlob
+        # if tweet_dict_data['favorited'] or tweet_dict_data['retweeted'] or tweet_dict_data['user']['followers_count'] > 100000 or tweet_dict_data['user']['friends_count'] > 5000:
+        #     log.debug(tweet_dict_data)
+        #     if tweet_dict_data['truncated']:
+        #         tweet = tweet_dict_data["extended_tweet"]['full_text']
+        #         hashtags = tweet_dict_data['extended_tweet']['entities']['hashtags']
+        #         user_mentions = tweet_dict_data['extended_tweet']['entities']['user_mentions']
+        #     else:
+        #         tweet = tweet_dict_data["text"]
+        #         hashtags = tweet_dict_data['entities']['hashtags']
+        #         user_mentions = tweet_dict_data['entities']['user_mentions']
 
-            # filtered_tweet = ' '.join(re.sub("(@[A-Za-z0-9])|([^0-9A-Za-z \t])|(\w:\/\/\S+)", " ", tweet).split())
-            filtered_tweet = TweetStreamListener.tweet_cleaner(tweet)
-            # tone_analyzer = ToneAnalyzerV3(version='2017-09-21', username='2024c3cc-6366-4b8d-9a11-f0fb0b7a6dcc',password='gQF2NOGfs2q4', url='https://gateway.watsonplatform.net/tone-analyzer/api')
+        #     # filtered_tweet = ' '.join(re.sub("(@[A-Za-z0-9])|([^0-9A-Za-z \t])|(\w:\/\/\S+)", " ", tweet).split())
+        #     filtered_tweet = TweetStreamListener.tweet_cleaner(tweet)
+        #     # tone_analyzer = ToneAnalyzerV3(version='2017-09-21', username='2024c3cc-6366-4b8d-9a11-f0fb0b7a6dcc',password='gQF2NOGfs2q4', url='https://gateway.watsonplatform.net/tone-analyzer/api')
 
-            # tone_analysis = tone_analyzer.tone({'text': filtered_tweet}, 'application/json').get_result()
-            # log.info(json.dumps(tone_analysis, indent=2))
+        #     # tone_analysis = tone_analyzer.tone({'text': filtered_tweet}, 'application/json').get_result()
+        #     # log.info(json.dumps(tone_analysis, indent=2))
 
-            tweet_text_blob = TextBlob(filtered_tweet)
-            log.debug(tweet_text_blob.sentiment_assessments)
-            # tweet_text_blob.sentiment.polarity, tweet_text_blob.sentiment.subjectivity)
+        #     tweet_text_blob = TextBlob(filtered_tweet)
+        #     log.debug(tweet_text_blob.sentiment_assessments)
+        #     # tweet_text_blob.sentiment.polarity, tweet_text_blob.sentiment.subjectivity)
 
-            # determine if sentiment is positive, negative, or neutral
-            if tweet_text_blob.sentiment.polarity < 0:
-                sentiment = "negative"
-            elif tweet_text_blob.sentiment.polarity == 0:
-                sentiment = "neutral"
-            else:
-                sentiment = "positive"
+        #     # determine if sentiment is positive, negative, or neutral
+        #     if tweet_text_blob.sentiment.polarity < 0:
+        #         sentiment = "negative"
+        #     elif tweet_text_blob.sentiment.polarity == 0:
+        #         sentiment = "neutral"
+        #     else:
+        #         sentiment = "positive"
 
-            # output sentiment
-            tweet_sentiment_obj = {
-                'tweet_id': tweet_dict_data['id'],
-                'filtered_tweet': filtered_tweet,
-                "sentiment_polarity": tweet_text_blob.sentiment.polarity,
-                "sentiment_subjectivity": tweet_text_blob.sentiment.subjectivity,
-                'tweet': tweet,
-                'hashtags': hashtags,
-                'user_mentions': user_mentions,
-                'created_at': tweet_dict_data['id'],
-                'quote_count': tweet_dict_data['quote_count'],
-                'reply_count': tweet_dict_data['reply_count'],
-                'retweet_count': tweet_dict_data['retweet_count'],
-                'favorite_count': tweet_dict_data['favorite_count'],
-                # user info
-                'user_id': tweet_dict_data['user']['id'],
-                'user_name': tweet_dict_data['user']['name'],
-                'account_description': tweet_dict_data['user']['description'],
-                'account_url': tweet_dict_data['user']['url'],
-                'user_followers_count': tweet_dict_data['user']['followers_count'],
-                'account_created_at': tweet_dict_data['user']['created_at'],
-                # location
-                'place': tweet_dict_data['place'],
-                'coordinates': tweet_dict_data['coordinates'],
-                'geo': tweet_dict_data['geo'],
-                # sentiment
-                'sentiment': sentiment,
-                'sentiment_assessments': tweet_text_blob.sentiment_assessments,
-                'tone_analysis': tone_analysis,
-                'timestamp': tweet_dict_data['timestamp_ms'],
-                'meta': tweet_dict_data
-            }
-            DataStoreClient.anlyzed_tweets_collection().update_one({'tweet_id': tweet_sentiment_obj['tweet_id']}, {"$set": tweet_sentiment_obj}, upsert=True)
-        return True
+        #     # output sentiment
+        #     tweet_sentiment_obj = {
+        #         'tweet_id': tweet_dict_data['id'],
+        #         'filtered_tweet': filtered_tweet,
+        #         "sentiment_polarity": tweet_text_blob.sentiment.polarity,
+        #         "sentiment_subjectivity": tweet_text_blob.sentiment.subjectivity,
+        #         'tweet': tweet,
+        #         'hashtags': hashtags,
+        #         'user_mentions': user_mentions,
+        #         'created_at': tweet_dict_data['id'],
+        #         'quote_count': tweet_dict_data['quote_count'],
+        #         'reply_count': tweet_dict_data['reply_count'],
+        #         'retweet_count': tweet_dict_data['retweet_count'],
+        #         'favorite_count': tweet_dict_data['favorite_count'],
+        #         # user info
+        #         'user_id': tweet_dict_data['user']['id'],
+        #         'user_name': tweet_dict_data['user']['name'],
+        #         'account_description': tweet_dict_data['user']['description'],
+        #         'account_url': tweet_dict_data['user']['url'],
+        #         'user_followers_count': tweet_dict_data['user']['followers_count'],
+        #         'account_created_at': tweet_dict_data['user']['created_at'],
+        #         # location
+        #         'place': tweet_dict_data['place'],
+        #         'coordinates': tweet_dict_data['coordinates'],
+        #         'geo': tweet_dict_data['geo'],
+        #         # sentiment
+        #         'sentiment': sentiment,
+        #         'sentiment_assessments': tweet_text_blob.sentiment_assessments,
+        #         'tone_analysis': tone_analysis,
+        #         'timestamp': tweet_dict_data['timestamp_ms'],
+        #         'meta': tweet_dict_data
+        #     }
+        #     DataStoreClient.anlyzed_tweets_collection().update_one({'tweet_id': tweet_sentiment_obj['tweet_id']}, {"$set": tweet_sentiment_obj}, upsert=True)
 
     # on failure
     def on_error(self, status):
