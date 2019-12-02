@@ -155,6 +155,9 @@ api.add_resource(PremiumSearchTweetApi, '/api/premuim')
 from .routes.tweet_routes import ExportTweetsApi
 api.add_resource(ExportTweetsApi, '/api/tweet/export')
 
+from .routes.tweet_routes import ExtractQuoteTweetsApi
+api.add_resource(ExtractQuoteTweetsApi, '/api/tweet/extract_quote')
+
 from .routes.tweet_routes import RemoveTweetsDuplicatesApi
 api.add_resource(RemoveTweetsDuplicatesApi, '/api/tweet/remove_dup')
 

@@ -1,6 +1,8 @@
 import pymongo
 from celery.schedules import crontab
 import csv
+from pymongo import UpdateOne, InsertOne
+from pymongo.errors import BulkWriteError
 from app.api import log, config_env, request, DataStoreClient, tweet_search, tweet_stream, celery
 
 @celery.task(name="tweets_search_task")
@@ -43,7 +45,7 @@ def stream_tweets(query):
 @celery.task(name="remove_tweets_duplicate")
 def remove_tweets_duplicate():
     log.info("start removing tweets text duplicate")
-    for a in DataStoreClient.tweets_collection().find({}, {'_id': 0}):
+    for a in DataStoreClient.tweets_collection('tweets').find({}, {'_id': 0}):
         try:
             if 'text' in a:
                 DataStoreClient.tweets_collection("unique_tweets_data").insert_one(a)
@@ -55,14 +57,24 @@ def remove_tweets_duplicate():
             continue
     log.info("stop removing tweets text duplicate")
 
-@celery.task(name="export_tweets")
-def export_tweets(fields):
+@celery.task(name="extract_tweet_qoute")
+def extract_tweet_qoute(collection_name):
+    log.info("start extracting tweets")
+    db_query = []
+    for a in DataStoreClient.tweets_collection(collection_name).find({'quoted_status':{'$exists': True}}, {'_id': 0}):
+        db_query.append(UpdateOne({'id_str': a['quoted_status']['id_str']}, {"$set": a['quoted_status']}, upsert=True))
     try:
-        cursor = DataStoreClient.tweets_collection().find(
-            {'$or': [
-                {'retweet_count': {'$gt': 10}},
-                {'favorite_count': {'$gt': 10}}
-            ]},
+        bulk_update = DataStoreClient.tweets_collection(collection_name).bulk_write(db_query)
+        log.info("Insert quote tweets: %s"%bulk_update.bulk_api_result)
+    except BulkWriteError as bwe:
+        log.error(bwe.details)
+    log.info("stop extracting tweets quote")
+
+@celery.task(name="export_tweets")
+def export_tweets(fields, collection_name):
+    try:
+        cursor = DataStoreClient.tweets_collection(collection_name).find(
+            {},
             {
             'text': 1,
             'full_text': 1,
@@ -70,16 +82,21 @@ def export_tweets(fields):
             'retweet_count': 1,
             'favorite_count': 1,
             'source': 1,
+            'created_at': 1,
+            'entities.media.url': 1,
+            'quote_count':1 ,
+            'quoted_status.full_text': 1,
             '_id': 0,
             'id': 1
         })
-
-        fields = ['text', 'full_text', 'reply_count', 'retweet_count', 'favorite_count', 'source', 'id']
-        with open('export/%s.csv' % config_env.tweets_collection_name(), 'w') as outfile:
+        log.info(fields)
+        fields = ['text', 'full_text', 'reply_count', 'retweet_count', 'favorite_count', 'source', 'created_at','entities', 'quote_count', 'quoted_status', 'id']
+        with open('export/%s.csv' % collection_name, 'w') as outfile:
             write = csv.DictWriter(outfile, fieldnames=fields)
             write.writeheader()
             for record in cursor:
                 write.writerow(record)
+            log.info("export done")
     except Exception as e:
         log.error(e)
 

@@ -4,7 +4,7 @@ from flask_jwt_extended import (JWTManager, create_access_token, create_refresh_
 
 from ..models.user import User
 from ..schema.tweet_schema import tweet_schema
-from ..utils.celery_task import searching, cursor_searching, premuim_search, stream_tweets, remove_tweets_duplicate, export_tweets
+from ..utils.celery_task import searching, cursor_searching, premuim_search, stream_tweets, remove_tweets_duplicate, export_tweets, extract_tweet_qoute
 parser.add_argument('name')
 
 
@@ -59,7 +59,14 @@ class StreamTweetApi(Resource):
 class ExportTweetsApi(Resource):
     def get(self):
         fields = request.args.get('fields')
-        task = export_tweets.apply_async(args=[fields])
+        collection_name = request.args.get('collection_name')
+        task = export_tweets.apply_async(args=[fields, collection_name])
+        return jsonify({"message": "start exporting"})
+
+class ExtractQuoteTweetsApi(Resource):
+    def get(self):
+        collection_name = request.args.get('collection_name')
+        task = extract_tweet_qoute.apply_async(args=[collection_name])
         return jsonify({"message": "start exporting"})
 
 class RemoveTweetsDuplicatesApi(Resource):
