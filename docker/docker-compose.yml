@@ -6,7 +6,7 @@ services:
     image: nginx:alpine
     container_name: nginx
     depends_on:
-      - ds_tweets
+      - ds_social_media
     ports:
       - "80:80"
       - "443:443"
@@ -32,10 +32,10 @@ services:
     networks:
       - celery
 
-  ds_tweets:
+  ds_social_media:
     # this is used for development only, use the tagged registry image instead
-    build: .
-    container_name: ds_tweets
+    build: ..
+    container_name: ds_social_medias
     # ports:
     #   - 5000:5000
     depends_on:
@@ -44,6 +44,7 @@ services:
     secrets:
       - postgres_db_uri
       - mongo_db_uri
+      - facebook_access_token
     environment:
       # flush python stdout
       - AUTHLIB_INSECURE_TRANSPORT=true
@@ -55,7 +56,7 @@ services:
       - db
       - celery
     volumes:
-      - ./tweets_api:/var/app
+      - ../social_media_api:/var/app
 
   mongo:
     image: mongo
@@ -72,7 +73,7 @@ services:
     networks:
       - db
     volumes:
-      - mongo-volume:/data/db
+      - ./data/mongodb_data:/data/db
 
   postgres:
     image: postgres
@@ -91,7 +92,7 @@ services:
     networks:
       - db
     volumes:
-      - postgres-volume:/var/lib/postgresql/data
+      - ./data/postgresql_data:/var/lib/postgresql/data
 
   pgadmin:
     image: dpage/pgadmin4
@@ -107,7 +108,7 @@ services:
     networks:
       - db
     volumes:
-      - pgadmin-volume:/var/lib/pgadmin
+      - ./data/pgadmin_data:/var/lib/pgadmin
 
   charts:
     image: quay.io/mongodb/charts:19.09
@@ -118,10 +119,10 @@ services:
     ports:
       - 8083:80
     volumes:
-      - keys:/mongodb-charts/volumes/keys
-      - logs:/mongodb-charts/volumes/logs
-      - db-certs:/mongodb-charts/volumes/db-certs
-      - web-certs:/mongodb-charts/volumes/web-certs
+      - ./data/mongodb_charts_data/keys:/mongodb-charts/volumes/keys
+      - ./data/mongodb_charts_data/logs:/mongodb-charts/volumes/logs
+      - ./data/mongodb_charts_data/db-certs:/mongodb-charts/volumes/db-certs
+      - ./data/mongodb_charts_data/web-certs:/mongodb-charts/volumes/web-certs
     environment:
       CHARTS_SUPPORT_WIDGET_AND_METRICS: "on"
     networks:
@@ -138,6 +139,8 @@ networks:
     driver: bridge
 
 secrets:
+  facebook_access_token:
+    file: ./secrets/facebook_access_token.txt
   mongo_admin_username:
     file: ./secrets/mongo_admin_username.txt
   mongo_admin_password:

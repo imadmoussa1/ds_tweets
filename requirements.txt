@@ -25,3 +25,4 @@ beautifulsoup4 == 4.4.0
 lxml == 4.2.5
 celery==4.3.0
 redis==3.3.11
+facebook_sdk==3.1.0

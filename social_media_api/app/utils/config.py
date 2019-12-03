@@ -21,6 +21,7 @@ class Config(object):
     _tweets_collection_name = None
     _twitter_bearer_token = None
     _trends_database_name = None
+    _facebook_access_token = None
 
     @staticmethod
     def sqlalchemy_database_uri():
@@ -141,6 +142,12 @@ class Config(object):
         if Config._twitter_bearer_token is None:
             Config._twitter_bearer_token = os.getenv('TWITTER_BEARER_TOKEN', '')
         return Config._twitter_bearer_token
+    
+    @staticmethod
+    def facebook_access_token():
+        if Config._facebook_access_token is None:
+            Config._facebook_access_token = open("/run/secrets/facebook_access_token", "r").readline()
+        return Config._facebook_access_token
 
 class ProductionConfig(Config):
     DEBUG = False

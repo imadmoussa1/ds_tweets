@@ -57,14 +57,17 @@ def remove_tweets_duplicate():
             continue
     log.info("stop removing tweets text duplicate")
 
-@celery.task(name="extract_tweet_qoute")
-def extract_tweet_qoute(collection_name):
+@celery.task(name="extract_tweet_quote")
+def extract_tweet_quote(collection_name):
     log.info("start extracting tweets")
     db_query = []
     for a in DataStoreClient.tweets_collection(collection_name).find({'quoted_status':{'$exists': True}}, {'_id': 0}):
         db_query.append(UpdateOne({'id_str': a['quoted_status']['id_str']}, {"$set": a['quoted_status']}, upsert=True))
+    for a in DataStoreClient.tweets_collection(collection_name).find({'retweeted_status':{'$exists': True}}, {'_id': 0}):
+        db_query.append(UpdateOne({'id_str': a['retweeted_status']['id_str']}, {"$set": a['retweeted_status']}, upsert=True))
     try:
         bulk_update = DataStoreClient.tweets_collection(collection_name).bulk_write(db_query)
+        bulk_update_tweets = DataStoreClient.tweets_collection().bulk_write(db_query)
         log.info("Insert quote tweets: %s"%bulk_update.bulk_api_result)
     except BulkWriteError as bwe:
         log.error(bwe.details)

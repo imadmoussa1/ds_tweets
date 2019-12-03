@@ -1,15 +1,17 @@
-tweets_api/export/*
+# data
+docker/data/*
+social_media_api/export/*
 # cerbot keys
 data/certbot/*
 # ignore secrets directory
-secrets/*.txt
-secrets/*.pem
-secrets/*.crt
+docker/secrets/*.txt
+docker/secrets/*.pem
+docker/secrets/*.crt
 
 # ignore configs directory
-configs/*.env
-configs/*.toml
-configs/global.env
+docker/configs/*.env
+docker/configs/*.toml
+docker/configs/global.env
 
 # ignore Pycharm files
 .idea/
