@@ -35,7 +35,7 @@ services:
   ds_social_media:
     # this is used for development only, use the tagged registry image instead
     build: ..
-    container_name: ds_social_medias
+    container_name: ds_social_media
     # ports:
     #   - 5000:5000
     depends_on:
@@ -56,7 +56,7 @@ services:
       - db
       - celery
     volumes:
-      - ../social_media_api:/var/app
+      - ../social_media:/var/app
 
   mongo:
     image: mongo
@@ -158,11 +158,11 @@ secrets:
   charts-mongodb-uri:
     file: ./secrets/charts_mongodb_uri.txt
 
-volumes:
-  mongo-volume:
-  postgres-volume:
-  pgadmin-volume:
-  keys:
-  logs:
-  db-certs:
-  web-certs:
+# volumes:
+#   mongo-volume:
+#   postgres-volume:
+#   pgadmin-volume:
+#   keys:
+#   logs:
+#   db-certs:
+#   web-certs:

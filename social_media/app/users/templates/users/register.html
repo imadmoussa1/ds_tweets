@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% set title = 'User Registration' %}
+
+{% block content %}
+
+<h1>Register</h1>
+<form action="" method="post">
+  {{ form.hidden_tag() }}
+  <div class="form-group row">
+    {{ form.email.label(class_="col-sm-2 col-form-label") }}
+    <div class="col-sm-10">
+      {{ form.email(size=64, class_="form-control", id_="exampleInputEmail1") }}
+      {% for error in form.email.errors %}
+      <span style="color: red;">[{{ error }}]</span>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="form-group row">
+    {{ form.password.label(class_="col-sm-2 col-form-label") }}
+    <div class="col-sm-10">
+      {{ form.password(size=40, class_="form-control", id_="inputPassword", placeholder="Password") }}
+      {% for error in form.password.errors %}
+      <span style="color: red;">[{{ error }}]</span>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="form-group row">
+    {{ form.confirm.label(class_="col-sm-2 col-form-label") }}
+    <div class="col-sm-10">
+      {{ form.confirm(size=40, class_="form-control", id_="inputPassword", placeholder="Confirm Password") }}
+      {% for error in form.confirm.errors %}
+      <span style="color: red;">[{{ error }}]</span>
+      {% endfor %}
+    </div>
+  </div>
+  <div>{{ form.submit(class_="btn btn-primary") }}</div>
+</form>
+{% endblock %}
