@@ -13,11 +13,11 @@ from flask_jwt_extended import exceptions as jwt_extended_exceptions
 from flask_marshmallow import Marshmallow
 from passlib.hash import pbkdf2_sha256
 from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
 
 from app.utils.config import Config
 from app.utils.logger import Logger
 from app.utils.data_store_client import DataStoreClient
-from app.utils.tweet_api import TweetApi
 from app.utils.tweet_stream_listener import TweetStreamListener
 from .celery_server import make_celery
 
@@ -30,7 +30,6 @@ datetime = datetime
 Resource = Resource
 parser = reqparse.RequestParser()
 jsonify = jsonify
-tweet_search = TweetApi
 tweet_stream = TweetStreamListener
 
 jwt = JWTManager()
@@ -40,46 +39,48 @@ login = LoginManager()
 api = Api()
 ma = Marshmallow()
 
+
 @api.errorhandler(jwt_extended_exceptions.FreshTokenRequired)
 def handle_expired_error():
-    return {"message": "Token has expired!"}, 401
+  return {"message": "Token has expired!"}, 401
 
 
 @api.errorhandler(jwt_extended_exceptions.RevokedTokenError)
 def revoked_token_callback():
-    return {"message": "Token has been revoked!"}, 402
+  return {"message": "Token has been revoked!"}, 402
 
 
 @jwt.token_in_blacklist_loader
 def check_if_token_in_blacklist(decrypted_token):
-    from .models.revoked_token import RevokedToken
-    jti = decrypted_token["jti"]
-    return RevokedToken.is_jti_blacklisted(jti)
+  from .models.revoked_token import RevokedToken
+  jti = decrypted_token["jti"]
+  return RevokedToken.is_jti_blacklisted(jti)
 
 
 def auth_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        from .models.user import User
-        auth = request.authorization
-        if auth:
-            current_user = User.find_by_username(auth.username)
-            if not current_user:
-                return {"message": "User {} doesn\"t exist".format(auth.username)}, 401
-            if not current_user.is_admin:
-                return {"message": "User {} not admin.".format(auth.username)}, 401
-            if User.verify_hash(auth.password, current_user.password):
-                access_token = create_access_token(identity=auth.username)
-                refresh_token = create_refresh_token(identity=auth.password)
-                return {"message": "Logged in as {}".format(current_user.user_name), "access_token": access_token, "refresh_token": refresh_token}, 200
-            else:
-                return {"message": "Wrong credentials"}, 401
-        return {"message": "Could not verify your login!"}, 401, {"WWW-Authenticate": "Basic realm=\"Login required\""}
+  @wraps(f)
+  def decorated(*args, **kwargs):
+    from .models.user import User
+    auth = request.authorization
+    if auth:
+      current_user = User.find_by_username(auth.username)
+      if not current_user:
+        return {"message": "User {} doesn\"t exist".format(auth.username)}, 401
+      if not current_user.is_admin:
+        return {"message": "User {} not admin.".format(auth.username)}, 401
+      if User.verify_hash(auth.password, current_user.password):
+        access_token = create_access_token(identity=auth.username)
+        refresh_token = create_refresh_token(identity=auth.password)
+        return {"message": "Logged in as {}".format(current_user.user_name), "access_token": access_token, "refresh_token": refresh_token}, 200
+      else:
+        return {"message": "Wrong credentials"}, 401
+    return {"message": "Could not verify your login!"}, 401, {"WWW-Authenticate": "Basic realm=\"Login required\""}
 
-    return decorated
+  return decorated
 
 from .models.user import User
 from .models.trend import Trend
+from .models.hashtag import Hashtag
 from .models.revoked_token import RevokedToken
 
 security = ["basicAuth", "apiKey"]
@@ -114,6 +115,7 @@ app.config.update(
 celery = make_celery(app)
 
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+csrf = CSRFProtect()
 # cors = CORS(app, supports_credentials=True)
 
 jwt.init_app(app)
@@ -121,6 +123,7 @@ db.init_app(app)
 ma.init_app(app)
 login.init_app(app)
 bcrypt.init_app(app)
+# csrf.init_app(app)
 app.app_context().push()
 
 db.create_all(app=app)
@@ -133,6 +136,12 @@ db.session.commit()
 # command.upgrade(alembic_cfg, "head")
 from .users.routes import users_blueprint
 app.register_blueprint(users_blueprint)
+
+from .hashtag.routes import hashtag_blueprint
+app.register_blueprint(hashtag_blueprint)
+
+from .trend.routes import trend_blueprint
+app.register_blueprint(trend_blueprint)
 
 from .api_routes.trend_routes import TrendApi
 api.add_resource(TrendApi, '/api/trend/<trend_id>')
@@ -186,7 +195,7 @@ api.init_app(app=app, authorizations=authorizations, security=security, version=
 login.login_view = "users.login"
 @login.user_loader
 def load_user(user_id):
-    return User.query.filter(User.id == int(user_id)).first()
+  return User.query.filter(User.id == int(user_id)).first()
+
 
 jwt._set_error_handler_callbacks(api)
-

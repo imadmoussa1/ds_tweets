@@ -2,8 +2,8 @@ from app.api import ma
 
 
 class TweetSchema(ma.Schema):
-    class Meta:
-        fields = ('title', 'description', 'hashtag')
+  class Meta:
+    fields = ('title', 'description', 'hashtag')
 
 
 tweet_schema = TweetSchema()

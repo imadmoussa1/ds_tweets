@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% set title = 'Edit hashtags' %}
+
+{% block content %}
+<div>
+  <h1>Edit hashtags</h1>
+  <form action="" method="post">
+    {{ form.hidden_tag() }}
+    <div class="form-group row">
+      {{ form.hashtag.label(class_="col-sm-2 col-form-label") }}
+      <div class="col-sm-10">
+        {{ form.hashtag(size=64, class_="form-control", id_="exampleFormControlInput1") }}
+        {% for error in form.hashtag.errors %}
+        <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="form-group row">
+      {{ form.active.label(class_="col-sm-2 col-form-label") }}
+      <div class="col-sm-10">
+        {{ form.active(size=1, class_="form-control form-control-md", id_="exampleFormControlSelect1") }}
+        {% for error in form.active.errors %}
+        <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="form-group row">
+      <div class="col-sm-10">
+        {{ form.submit(class_="btn btn-success")}}
+        <button type="button" onclick="window.location.href='{{ url_for('hashtag.hashtag_list') }}';" class="btn btn-danger">Cancel</button>
+      </div>
+    </div>
+  </form>
+  {% endblock %}
+</div>

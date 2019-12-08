@@ -5,11 +5,12 @@ from ..schema.trend_schema import trends_schema
 from ..models.trend import Trend
 from ..models.user import User
 
+
 class TrendListApi(Resource):
-    @jwt_required
-    def get(self):
-        user_name = get_jwt_identity()
-        user = User.query.filter(User.user_name == user_name).first()
-        trends = Trend.query.filter(Trend.active == True, Trend.user == user)
-        result = trends_schema.dump(trends)
-        return jsonify(result)
+  @jwt_required
+  def get(self):
+    user_name = get_jwt_identity()
+    user = User.query.filter(User.user_name == user_name).first()
+    trends = Trend.query.filter(Trend.active == True, Trend.user == user)
+    result = trends_schema.dump(trends)
+    return jsonify(result)

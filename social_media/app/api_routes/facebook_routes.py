@@ -9,13 +9,13 @@ parser.add_argument('name')
 
 
 class FacebookApi(Resource):
-    def get(self):
-        import facebook
-        fb_id = request.args.get('fb_id')
-        fields = request.args.get('fields')
-        graph = facebook.GraphAPI(access_token=config_env.facebook_access_token(), version="3.1")
-        post = graph.get_object(id=fb_id, fields=fields)
-        log.info(post)
-        # searching.apply_async(args=[fb_id])
-        # cursor_searching.apply_async(args=[fb_id])
-        return jsonify({"message": "Start searching"})
+  def get(self):
+    import facebook
+    fb_id = request.args.get('fb_id')
+    fields = request.args.get('fields')
+    graph = facebook.GraphAPI(access_token=config_env.facebook_access_token(), version="3.1")
+    post = graph.get_object(id=fb_id, fields=fields)
+    log.info(post)
+    # searching.apply_async(args=[fb_id])
+    # cursor_searching.apply_async(args=[fb_id])
+    return jsonify({"message": "Start searching"})

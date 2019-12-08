@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% set title = 'Trend List' %}
+
+{% block content %}
+<div>
+  <h1>Trend List</h1>
+  <ul class="list-group">
+    <div class="row">
+      <li class="list-group-item list-group-item col-10">
+        <div class="row">
+          <div class="col-2">Name</div>
+          <div class="col-2">Volume</div>
+          <div class="col-2">Created at</div>
+          <div class="col-2">as of</div>
+          <div class="col-1">woeid</div>
+          <div class="col-1">url</div>
+          <div class="col-1">query</div>
+          <div class="col-1">promoted content</div>
+        </div>
+      </li>
+    </div>
+    {% for item in data %}
+    <div class="row">
+      <li class="list-group-item list-group-item col-10">
+        <div class="row">
+          <div class="col-2">{{item.name}}</div>
+          <div class="col-2">{{item.tweet_volume}}</div>
+          <div class="col-2">{{item.created_at}}</div>
+          <div class="col-2">{{item.as_of}}</div>
+          <div class="col-1">{{item.woeid}}</div>
+          <div class="col-1">{{item.url}}</div>
+          <div class="col-1">{{item.trend_query}}</div>
+          <div class="col-1">{{item.promoted_content}}</div>
+        </div>
+      </li>
+    </div>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
