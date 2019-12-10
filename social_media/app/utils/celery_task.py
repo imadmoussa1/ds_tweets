@@ -6,7 +6,7 @@ from pymongo import UpdateOne, InsertOne
 from pymongo.errors import BulkWriteError
 from app.api import log, config_env, request, tweet_stream, celery
 from app.utils.tweet_api import TweetApi
-from .data_store_client import DataStoreClient
+from .data_store_client import DataStoreClient, modify_tweet
 from ..models.hashtag import Hashtag
 
 tweet_search = TweetApi
@@ -72,10 +72,10 @@ def remove_tweets_duplicate(collection_name):
   for a in DataStoreClient.tweets_collection(collection_name).find({}, {'_id': 0}):
     try:
       if 'text' in a:
-        DataStoreClient.tweets_collection("unique_tweets_data").insert_one(a)
+        DataStoreClient.tweets_collection("unique_tweets_data").insert_one(modify_tweet(a))
       else:
         a['text'] = a['full_text']
-        DataStoreClient.tweets_collection("unique_tweets_data").insert_one(a)
+        DataStoreClient.tweets_collection("unique_tweets_data").insert_one(modify_tweet(a))
     except pymongo.errors.DuplicateKeyError:
       # log.error("duplicate text")
       continue
@@ -91,13 +91,9 @@ def extract_tweet_quote(collection_name):
   log.info("start extracting tweets")
   db_query = []
   for a in DataStoreClient.tweets_collection(collection_name).find({'quoted_status': {'$exists': True}}, {'_id': 0}):
-    if isinstance(type(a['created_at']), str):
-      a['created_at'] = datetime.datetime.strptime(a['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
-    db_query.append(UpdateOne({'id_str': a['quoted_status']['id_str']}, {"$set": a['quoted_status']}, upsert=True))
+    db_query.append(UpdateOne({'id_str': a['quoted_status']['id_str']}, {"$set": modify_tweet(a['quoted_status'])}, upsert=True))
   for a in DataStoreClient.tweets_collection(collection_name).find({'retweeted_status': {'$exists': True}}, {'_id': 0}):
-    if isinstance(type(a['created_at']), str):
-      a['created_at'] = datetime.datetime.strptime(a['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
-    db_query.append(UpdateOne({'id_str': a['retweeted_status']['id_str']}, {"$set": a['retweeted_status']}, upsert=True))
+    db_query.append(UpdateOne({'id_str': a['retweeted_status']['id_str']}, {"$set": modify_tweet(a['retweeted_status'])}, upsert=True))
   try:
     bulk_update = DataStoreClient.tweets_collection(collection_name).bulk_write(db_query)
     bulk_update_tweets = DataStoreClient.tweets_collection().bulk_write(db_query)
@@ -150,6 +146,6 @@ def setup_periodic_tasks(sender, **kwargs):
   sender.add_periodic_task(3600.0, get_trends.s(23424873), name='add every 1 hour')
   sender.add_periodic_task(7200.0, auto_searching.s(), name='add every 2 hour')
   sender.add_periodic_task(10800.0, extract_tweet_quote.s('tweets'), name='add every 3 hour')
-  sender.add_periodic_task(43200.0, extract_tweet_quote.s(), name='add every half day')
+  sender.add_periodic_task(43200.0, extract_tweet_quote.s('tweets_data'), name='add every half day')
   sender.add_periodic_task(82800.0, extract_tweet_quote.s('tweets'), name='add every day')
   # sender.add_periodic_task(crontab(minute=4, hour='*/3'),get_trends.s(23424873), name='evry 3 hours')

@@ -9,7 +9,7 @@ from pymongo import UpdateOne, InsertOne
 from pymongo.errors import BulkWriteError
 from .config import Config
 from tweepy import OAuthHandler
-from .data_store_client import DataStoreClient
+from .data_store_client import DataStoreClient, modify_tweet
 from .tweet_stream_listener import TweetStreamListener
 from ..models.trend import Trend
 from app.api import log, db
@@ -38,10 +38,8 @@ class TweetApi:
     for tweet in tweepy.Cursor(self.api_connected().search, tweet_mode="extended", q=search_query, result_type="mixed").items(200000):
       if tweet:
         tweet_count += 1
-        tweet._json['created_at'] = datetime.datetime.strptime(
-            tweet._json['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
-        db_query.append(UpdateOne({'id_str': tweet._json['id_str']}, {"$set": tweet._json}, upsert=True))
-        db_query_insert.append(InsertOne(tweet._json))
+        db_query.append(UpdateOne({'id_str': tweet._json['id_str']}, {"$set": modify_tweet(tweet._json)}, upsert=True))
+        db_query_insert.append(InsertOne(modify_tweet(tweet._json)))
         time.sleep(1)
     try:
       bulk_update = DataStoreClient.tweets_collection().bulk_write(db_query)
@@ -77,9 +75,8 @@ class TweetApi:
           log.info("No more tweets found")
           break
         for tweet in new_tweets:
-          tweet._json['created_at'] = datetime.datetime.strptime(tweet._json['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
-          db_query.append(UpdateOne({'id_str': tweet._json['id_str']}, {"$set": tweet._json}, upsert=True))
-          db_query_insert.append(InsertOne(tweet._json))
+          db_query.append(UpdateOne({'id_str': tweet._json['id_str']}, {"$set": modify_tweet(tweet._json)}, upsert=True))
+          db_query_insert.append(InsertOne(modify_tweet(tweet._json)))
           # log.info(tweet._json)
         try:
           bulk_update = DataStoreClient.tweets_collection().bulk_write(db_query)
@@ -113,8 +110,7 @@ class TweetApi:
         # DataStoreClient.tweets_collection().update_one({'id_str': tweet._json['id_str']}, {"$set": tweet._json}, upsert=True)
         # DataStoreClient.tweets_collection('tweets').insert_many(response['results'])
         for tweet in response['results']:
-          tweet['created_at'] = datetime.datetime.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
-          db_query.append(UpdateOne({'id_str': tweet['id_str']}, {"$set": tweet}, upsert=True))
+          db_query.append(UpdateOne({'id_str': tweet['id_str']}, {"$set": modify_tweet(tweet)}, upsert=True))
       if 'next' not in response:
         break
       next_token = response['next']

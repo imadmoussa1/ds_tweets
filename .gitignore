@@ -1,6 +1,6 @@
 # data
 docker/data/*
-social_media_api/export/*
+social_media/export/*
 # cerbot keys
 data/certbot/*
 # ignore secrets directory

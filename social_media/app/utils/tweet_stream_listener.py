@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from textblob import TextBlob
 import tweepy
 # from watson_developer_cloud import ToneAnalyzerV3
-from .data_store_client import DataStoreClient
+from .data_store_client import DataStoreClient, modify_tweet
 from .logger import Logger
 
 log = Logger.log(__name__)
@@ -17,9 +17,8 @@ class TweetStreamListener(tweepy.StreamListener):
   def on_data(self, data):
     tweet_dict_data = json.loads(data)
     log.info("stream tweet: %s" % tweet_dict_data['text'])
-    tweet_dict_data['created_at'] = datetime.datetime.strptime(tweet_dict_data['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
-    DataStoreClient.tweets_collection('tweets').insert_one(tweet_dict_data)
-    DataStoreClient.tweets_collection().update_one({'id_str': tweet_dict_data['id_str']}, {"$set": tweet_dict_data}, upsert=True)
+    DataStoreClient.tweets_collection('tweets').insert_one(modify_tweet(tweet_dict_data))
+    DataStoreClient.tweets_collection().update_one({'id_str': tweet_dict_data['id_str']}, {"$set": modify_tweet(tweet_dict_data)}, upsert=True)
 
     # # pass tweet into TextBlob
     # if tweet_dict_data['favorited'] or tweet_dict_data['retweeted'] or tweet_dict_data['user']['followers_count'] > 100000 or tweet_dict_data['user']['friends_count'] > 5000:

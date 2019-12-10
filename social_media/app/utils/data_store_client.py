@@ -3,8 +3,18 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from datetime import datetime
 import pytz
+import copy
 from .config import Config
 
+def modify_tweet(tweet):
+  tweet_copy = copy.deepcopy(tweet)
+  # if isinstance(type(tweet_copy['created_at']), str):
+  tweet_copy['created_at'] = datetime.strptime(tweet_copy['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
+  if "id" in tweet_copy:
+    del tweet_copy["id"]
+  if "_id" in tweet_copy:
+    del tweet_copy["_id"]
+  return tweet_copy
 
 class DataStoreClient:
   _mongo_client = None

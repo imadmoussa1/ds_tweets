@@ -47,4 +47,5 @@ pycparser==2.19
 pytest==3.9.2
 WTForms==2.2.1
 pandas==0.24.2
-plotly==3.10.0
+plotly==4.3.0
+dash==1.7.0
