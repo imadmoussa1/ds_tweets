@@ -67,7 +67,7 @@ def search_hashtag(id):
   hashtag = Hashtag.query.get(id)
   if hashtag:
     searching.apply_async(args=[hashtag.hashtag])
-    cursor_searching.apply_async(args=[hashtag.hashtag])
+    cursor_searching.apply_async(args=[hashtag.hashtag, None])
     return redirect(url_for('hashtag.hashtag_list'))
   return redirect(url_for('hashtag.hashtag_list'))
 

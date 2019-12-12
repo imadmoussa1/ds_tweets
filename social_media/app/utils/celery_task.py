@@ -21,12 +21,21 @@ def searching(query):
   except Exception as e:
       log.error(e)
 
-@celery.task(name="tweets_cursor_search_task")
-def cursor_searching(query):
-  try:
-    log.info("start cursor searching for %s" % (query))
+@celery.task(name="user_tweets_search_task")
+def user_searching(screen_name):
+  # try:
+    log.info("start searching for user %s" % (screen_name))
     search = tweet_search()
-    search.get_tweets_cursor("#%s" % query)
+    search.get_user_tweets(screen_name)
+    log.info("done searching")
+  # except Exception as e:
+  #   log.error(e)
+
+@celery.task(name="tweets_cursor_search_task")
+def cursor_searching(query, screen_name):
+  try:
+    search = tweet_search()
+    search.get_tweets_cursor(search_query=query, screen_name=screen_name)
     log.info("done searching")
   except Exception as e:
     log.error(e)
@@ -120,10 +129,10 @@ def export_tweets(fields, collection_name):
             'quote_count': 1,
             'quoted_status.full_text': 1,
             '_id': 0,
-            'id': 1
+            'id_str': 1
         })
     log.info(fields)
-    fields = ['text', 'full_text', 'reply_count', 'retweet_count', 'favorite_count', 'source', 'created_at', 'entities', 'quote_count', 'quoted_status', 'id']
+    fields = ['text', 'full_text', 'reply_count', 'retweet_count', 'favorite_count', 'source', 'created_at', 'entities', 'quote_count', 'quoted_status', 'id_str']
     with open('export/%s.csv' % collection_name, 'w') as outfile:
       write = csv.DictWriter(outfile, fieldnames=fields)
       write.writeheader()

@@ -30,12 +30,17 @@ class TweetApi:
     stream = tweepy.Stream(self.api_connected().auth, listener)
     stream.filter(track=query, filter_level="meduim", is_async=True)
 
-  def get_tweets_cursor(self, search_query):
+  def get_tweets_cursor(self, search_query=None, screen_name=None):
     tweet_count = 0
-    log.info("Start searching using cursor")
     db_query = []
     db_query_insert = []
-    for tweet in tweepy.Cursor(self.api_connected().search, tweet_mode="extended", q=search_query, result_type="mixed").items(200000):
+    if screen_name:
+      log.info("Start user %s searching using cursor"%screen_name)
+      tweets = tweepy.Cursor(self.api_connected().user_timeline, tweet_mode="extended", screen_name=screen_name, result_type="mixed").items()
+    if search_query:
+      log.info("Start query %s searching using cursor"%search_query)
+      tweets = tweepy.Cursor(self.api_connected().search, tweet_mode="extended", q="#%s" % search_query, result_type="mixed").items(200000)
+    for tweet in tweets:
       if tweet:
         tweet_count += 1
         db_query.append(UpdateOne({'id_str': tweet._json['id_str']}, {"$set": modify_tweet(tweet._json)}, upsert=True))
@@ -51,33 +56,25 @@ class TweetApi:
     log.info(tweet_count)
 
   def get_tweets(self, search_query):
-    maxTweets = 10000000 # Some arbitrary large number
-    tweetsPerQry = 100 # this is the max the API permits
-    sinceId = None
-    max_id = -1
-    tweetCount = 0
-    log.info("Start searching using old method")
-    db_query = []
-    db_query_insert = []
-    while tweetCount < maxTweets:
-      try:
-        if max_id <= 0:
-          if not sinceId:
-            new_tweets = self.api_connected().search(q=search_query, tweet_mode="extended", result_type="mixed", count=tweetsPerQry)
-          else:
-            new_tweets = self.api_connected().search(q=search_query, tweet_mode="extended", result_type="mixed", count=tweetsPerQry, since_id=sinceId)
-        else:
-          if not sinceId:
-            new_tweets = self.api_connected().search(q=search_query, tweet_mode="extended", result_type="mixed", count=tweetsPerQry, max_id=str(max_id - 1))
-          else:
-            new_tweets = self.api_connected().search(q=search_query, tweet_mode="extended", result_type="mixed", count=tweetsPerQry, max_id=str(max_id - 1), since_id=sinceId)
-        if not new_tweets:
-          log.info("No more tweets found")
-          break
+    try:
+      log.info("Start searching using old method")
+      db_query = []
+      db_query_insert = []
+      alltweets = []
+      new_tweets = self.api_connected().search(q=search_query, tweet_mode="extended", result_type="mixed", count=200)
+      alltweets.extend(new_tweets)
+      oldest = alltweets[-1].id - 1
+      while len(new_tweets) > 0:
+        log.info("getting %s tweets before %s" % (search_query, oldest))
         for tweet in new_tweets:
           db_query.append(UpdateOne({'id_str': tweet._json['id_str']}, {"$set": modify_tweet(tweet._json)}, upsert=True))
           db_query_insert.append(InsertOne(modify_tweet(tweet._json)))
-          # log.info(tweet._json)
+        new_tweets = self.api_connected().search(q=search_query, tweet_mode="extended", result_type="mixed", count=200, max_id=oldest)
+        #all subsiquent requests use the max_id param to prevent duplicates
+        alltweets.extend(new_tweets)
+        #update the id of the oldest tweet less one
+        oldest = alltweets[-1].id - 1
+        log.info("...%s, %s tweets downloaded so far" % (len(alltweets), search_query))
         try:
           bulk_update = DataStoreClient.tweets_collection().bulk_write(db_query)
           log.info("Insert update: %s" % bulk_update.bulk_api_result)
@@ -85,12 +82,46 @@ class TweetApi:
           log.info("Insert result: %s" % bulk_insert.bulk_api_result)
         except BulkWriteError as bwe:
           log.error(bwe.details)
-        tweetCount += len(new_tweets)
-        log.info("Downloading max %s tweets for %s"%(tweetCount, search_query))
-        sinceId = new_tweets[-1].id
-      except tweepy.TweepError as e:
-        log.error("some error : " + str(e))
-        continue
+    except tweepy.TweepError as e:
+      log.error("some error : " + str(e))
+
+  def get_user_tweets(self, screen_name):
+    log.info("Start user: %s tweets search" % screen_name)
+    db_query = []
+    db_query_insert = []
+    alltweets = []
+    # try:
+    new_tweets = self.api_connected().user_timeline(screen_name=screen_name, tweet_mode="extended", result_type="mixed", count=200)
+    alltweets.extend(new_tweets)
+    if len(alltweets) > 190:
+      oldest = alltweets[-1].id-1
+      while len(new_tweets) > 0:
+        log.info("getting %s tweets before %s" % (screen_name, oldest))
+        for tweet in new_tweets:
+          db_query.append(UpdateOne({'id_str': tweet._json['id_str']}, {"$set": modify_tweet(tweet._json)}, upsert=True))
+          db_query_insert.append(InsertOne(modify_tweet(tweet._json)))
+        new_tweets = self.api_connected().user_timeline(screen_name=screen_name, tweet_mode="extended", result_type="mixed", count=200, max_id=oldest)
+        alltweets.extend(new_tweets)
+        oldest = alltweets[-1].id-1
+        log.info("...%s, %s tweets downloaded so far" % (len(alltweets), screen_name))
+    elif len(alltweets) > 1:
+      oldest = alltweets[-1].id-1
+      for tweet in alltweets:
+        db_query.append(UpdateOne({'id_str': tweet._json['id_str']}, {"$set": modify_tweet(tweet._json)}, upsert=True))
+        db_query_insert.append(InsertOne(modify_tweet(tweet._json)))
+    elif len(alltweets) > 0:
+      for tweet in alltweets:
+        db_query.append(UpdateOne({'id_str': tweet._json['id_str']}, {"$set": modify_tweet(tweet._json)}, upsert=True))
+        db_query_insert.append(InsertOne(modify_tweet(tweet._json)))
+    try:
+      bulk_update = DataStoreClient.tweets_collection(screen_name).bulk_write(db_query)
+      log.info("Insert update: %s" % bulk_update.bulk_api_result)
+      bulk_insert = DataStoreClient.tweets_collection('%s_raw' % screen_name).bulk_write(db_query_insert)
+      log.info("Insert result: %s" % bulk_insert.bulk_api_result)
+    except BulkWriteError as bwe:
+      log.error(bwe.details)
+    # except tweepy.TweepError as e:
+    #   log.error("some error : " + str(e))
 
   def get_premuin_tweets(self, search_query, from_date, to_date):
     next_token = None

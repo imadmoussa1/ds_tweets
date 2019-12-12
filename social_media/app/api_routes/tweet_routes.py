@@ -4,7 +4,7 @@ from flask_jwt_extended import (JWTManager, create_access_token, create_refresh_
 
 from ..models.user import User
 from ..schema.tweet_schema import tweet_schema
-from ..utils.celery_task import searching, cursor_searching, premuim_search, stream_tweets, remove_tweets_duplicate, export_tweets, extract_tweet_quote
+from ..utils.celery_task import user_searching, searching, cursor_searching, premuim_search, stream_tweets, remove_tweets_duplicate, export_tweets, extract_tweet_quote
 parser.add_argument('name')
 
 
@@ -34,10 +34,14 @@ class TweetApi(Resource):
 class SearchTweetApi(Resource):
   def get(self):
     query = request.args.get('query')
-    searching.apply_async(args=[query])
-    cursor_searching.apply_async(args=[query])
+    screen_name = request.args.get('screen_name')
+    if query:
+      searching.apply_async(args=[query])
+      cursor_searching.apply_async(args=[query, None])
+    if screen_name:
+      user_searching.apply_async(args=[screen_name])
+      cursor_searching.apply_async(args=[None, screen_name])
     return jsonify({"message": "Start searching"})
-
 
 class PremiumSearchTweetApi(Resource):
   def get(self):
